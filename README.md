@@ -1,42 +1,25 @@
-# sv
+# lab-vesper
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The name means absolutely nothing. I just figured that if I'm going to start uploading all my half-baked stuff into GitHub I should come up with some common naming scheme for them all, so I'm going to start prefixing them all with lab.
 
-## Creating a project
+This is a SvelteKit recipe site project where I am currently experimenting with complex form handling, server validation, and UI patterns.
 
-If you're seeing this, you've probably already done this step. Congrats!
+Currently using:
+- SvelteKit (hey, this one I might be pretty decent at by now 😎)
+- TypeScript (still a lot to learn)
+- shadcn-svelte (completely new to me)
+- Valibot (completely new to me)
+- SQLite (completely new to me)
 
-```sh
-# create a new project
-npx sv create my-app
-```
+Previously used Zod instead of Valibot, which you may be able to find from the commit history, but I am unsure. Switched to Valibot mainly to experiment and because Zod became annoying to use with really large forms (so far Valibot has been pretty annoying too)
 
-To recreate this project with the same configuration:
+The root +page.svelte file also contains some experimentation about fully NO-JS forms that are progressively enhanced, which I periodically tried to move over to the massive recipe form page, but it turns out making a massive interactive form with NO-JS is also kind of a nightmare, requiring a gazillion server form actions and sending previously input form data back and forth just so that it persists across the full page reloads. You might be able to find this stuff as well in the commit history (src/routes/recipes/add/+page.svelte — if it exists in the commit history), but I am not sure if I committed it.
 
-```sh
-# recreate this project
-bun x sv create --template minimal --types ts --add tailwindcss="plugins:typography,forms" drizzle="database:sqlite+sqlite:better-sqlite3" --install bun phytoflow
-```
+This repo is currently mainly for trying things out, comparing approaches, and figuring out what feels maintainable in real projects. A lot of the focus is on:
+- nested/conditional forms
+- server-side validation
+- syncing validation errors back to the client
+- typed form data flows
+- generally making complex forms less painful
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Some parts of the codebase are fairly clean, some are absolute travesties. 
