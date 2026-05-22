@@ -1,164 +1,268 @@
-import z from "zod";
+import * as v from 'valibot';
 
 export const RECIPE_LIMITS = {
-  name: { min: 2, max: 60 },
-  desc: { min: 10, max: 150 },
-  reference: { min: 5, max: 80 },
-  servings: { max: 30, maxDigits: 2 },
-  duration: { max: 2880 },
-
-  ingredient: { min: 2, max: 60, minCount: 1, maxCount: 30 },
-  instruction: { min: 2, max: 250, minCount: 1, maxCount: 30 },
-
-  note: { min: 5, max: 150, maxCount: 3 },
-
-  cuisine: { min: 2, max: 35 }
+  title: { minChars: 2, maxChars: 35 },
+  description: { minChars: 10, maxChars: 150 },
+  references: { maxCount: 5, minChars: 10, maxChars: 50 },
+  imageUrl: { minChars: 10, maxChars: 150 },
+  mealTypes: { minCount: 1, maxCount: 10 },
+  servings: { minValue: 1, maxValue: 50 },
+  yield: { minChars: 5, maxChars: 20 },
+  activeTime: { minChars: 1, maxChars: 10 },
+  inactiveTime: { minChars: 1, maxChars: 10 },
+  customCuisine: { minChars: 2, maxChars: 35 },
+  generalNotes: { maxCount: 3, minChars: 20, maxChars: 150 },
+  ingredients: { 
+    minCount: 1,
+    maxCount: 40, 
+    minChars: 2, 
+    maxChars: 100, 
+    notes: {
+      maxCount: 3,
+      minChars: 20,
+      maxChars: 150
+    }
+  },
+  instructions: {
+    minCount: 1,
+    maxCount: 20,
+    minChars: 5,
+    maxChars: 250,
+    notes: {
+      maxCount: 3,
+      minChars: 20,
+      maxChars: 150
+    }
+  },
 } as const;
 
-const CookingTimeSchema = z
-  .string()
-  .trim()
-  .regex(/^\d+\s*(-\s*\d+)?$/, "Must be a number or range like 30-45")
-  .transform((val) => {
-    if (val.includes("-")) {
-      const [min, max] = val.split("-").map(v => Number(v.trim()));
-      if (Number.isNaN(min) || Number.isNaN(max)) {
-        throw new Error("Invalid number");
-      }
-      return { min, max };
-    }
-    const num = Number(val);
-    if (Number.isNaN(num)) {
-      throw new Error("Invalid number");
-    }
-    return { min: num, max: num };
-  })
-  .refine((val) => val.min <= val.max, {
-    message: "Left side must be less than right side"
-  })
-  .refine((val) => val.max <= RECIPE_LIMITS.duration.max, {
-    message: `Cooking time cannot exceed ${RECIPE_LIMITS.duration.max} minutes`
-  });
+const minMaxString = (name: string, min: number, max: number) => {
+  return v.pipe(
+    v.string(`${name} must be valid text`), 
+    v.trim(),
+    v.minLength(min, `${name} must be at least ${min} characters long`),
+    v.maxLength(max, `${name} cannot be more than ${max} characters long`
+    )
+  )
+}
 
-const IngredientSchema = z.object({
-  text: z.string()
-    .trim()
-    .min(
-      RECIPE_LIMITS.ingredient.min,
-      { error: `Ingredient must have at least ${RECIPE_LIMITS.ingredient.min} characters` }
-    )
-    .max(
-      RECIPE_LIMITS.ingredient.max,
-      { error: `Ingredient cannot have more than ${RECIPE_LIMITS.ingredient.max} characters` }
+const TimeSchema = v.object({
+  input: v.pipe(
+    v.string("You must enter a time"),
+    v.check((value) =>
+      /^\s*-?\d+\s*(-\s*-?\d+\s*)?$/.test(value),
+      "Time must be a number (e.g. 20) or a range (e.g. 20-40)"
     ),
-  notes: z.array(
-    z.string()
-      .trim()
-      .min(
-        RECIPE_LIMITS.note.min,
-        { error: `Note must have at least ${RECIPE_LIMITS.note.min} characters` }
-      )
-      .max(
-        RECIPE_LIMITS.note.max,
-        { error: `Note cannot have more than ${RECIPE_LIMITS.note.max} characters` }
-      )
-  ).max(
-    RECIPE_LIMITS.note.maxCount,
-    { error: `There cannot be more than ${RECIPE_LIMITS.note.max - 1} notes` }
-  ).optional()
-});
+    v.transform((value) => {
+      const [a, b] = value.replace(/\s+/g, '').split('-');
 
-const InstructionSchema = z.object({
-  text: z.string()
-    .trim()
-    .min(
-      RECIPE_LIMITS.instruction.min,
-      { error: `Instruction must have at least ${RECIPE_LIMITS.instruction.min} characters` }
-    )
-    .max(
-      RECIPE_LIMITS.instruction.max,
-      { error: `Instruction cannot have more than ${RECIPE_LIMITS.instruction.max} characters` }
-    ),
-  notes: z.array(
-    z.string()
-      .trim()
-      .min(
-        RECIPE_LIMITS.note.min,
-        { error: `Note must have at least ${RECIPE_LIMITS.note.min} characters` }
-      )
-      .max(
-        RECIPE_LIMITS.note.max,
-        { error: `Note cannot have more than ${RECIPE_LIMITS.note.max} characters` }
-      )
-  ).max(
-    RECIPE_LIMITS.note.maxCount, 
-    { error: `There cannot be more than ${RECIPE_LIMITS.note.max - 1} notes` }
-  ).optional()
-});
+      const start = parseInt(a, 10);
+      const end = b === undefined ? start : parseInt(b, 10);
 
-export const RecipeSchema = z.object({
-  name: z.string()
-    .trim()
-    .min(RECIPE_LIMITS.name.min, { error: `Name must be at least ${RECIPE_LIMITS.name.min} characters long` })
-    .max(RECIPE_LIMITS.name.max, { error: `Name must be less than ${RECIPE_LIMITS.name.max} characters long` }),
-  desc: z.string()
-    .trim()
-    .min(RECIPE_LIMITS.desc.min, { error: `Description must be at least ${RECIPE_LIMITS.desc.min} characters long` })
-    .max(RECIPE_LIMITS.desc.max, { error: `Description must be less than ${RECIPE_LIMITS.desc.max} characters long` }),
-  reference: z.string()
-    .trim()
-    .min(
-      RECIPE_LIMITS.reference.min, 
-      { error: `Reference must be at least ${RECIPE_LIMITS.reference.min} characters long` }
-    )
-    .max(
-      RECIPE_LIMITS.reference.max,
-      { error: `Reference must be less than ${RECIPE_LIMITS.reference.max} characters long` }
-    ),
-  servings: z.coerce.number<string>()
-    .int({ error: "Servings must be an integer" })
-    .positive({ error: "Servings cannot be a negative number" })
-    .max(
-      RECIPE_LIMITS.servings.max, 
-      { error: `Servings cannot be more than ${RECIPE_LIMITS.servings.maxDigits} digits long` }
-    ),
-  cuisine: z.string()
-    .trim()
-    .min(
-      RECIPE_LIMITS.cuisine.min,
-      { error: `Cuisine must be at least ${RECIPE_LIMITS.cuisine.min} characters long` }
-    )
-    .max(
-      RECIPE_LIMITS.cuisine.max,
-      { error: `Cuisine must be less than ${RECIPE_LIMITS.cuisine.max} characters long` }
-    ),
-  ingredients: z.array(IngredientSchema)
-    .min(
-      RECIPE_LIMITS.ingredient.minCount,
-      { error: `There has to be at least ${RECIPE_LIMITS.ingredient.minCount} ingredients` }
-    )
-    .max(
-      RECIPE_LIMITS.ingredient.maxCount,
-      { error: `There cannot be more than ${RECIPE_LIMITS.ingredient.maxCount} ingredients` }
-    ),
-  instructions: z.array(InstructionSchema)
-    .min(
-      RECIPE_LIMITS.instruction.minCount,
-      { error: `There has to be at least ${RECIPE_LIMITS.instruction.minCount} instructions` }
-    )
-    .max(
-      RECIPE_LIMITS.instruction.maxCount,
-      { error: `There cannot be more than ${RECIPE_LIMITS.instruction.maxCount} instructions` }
-    ),
-  
-  diff: z.enum(
-    ["very_easy", "easy", "moderate", "hard", "very_hard", "nightmare"],
-    { error: "You must select one of the difficulties" }
+      return {
+        starting: Math.min(start, end),
+        ending: Math.max(start, end),
+      };
+    }),
+    v.check(({ starting, ending }) => {
+      if (!Number.isInteger(starting) || !Number.isInteger(ending)) return false;
+      if (starting === 0 || ending === 0) return false;
+      return true;
+    })
   ),
-  activeTime: CookingTimeSchema,
-  inactiveTime: CookingTimeSchema,
+  unit: v.picklist([
+    "minute",
+    "hour",
+    "day",
+    "week"
+  ])
+});
+export const RecipeSchema = v.pipe(v.object({
+  title: minMaxString("Title", RECIPE_LIMITS.title.minChars, RECIPE_LIMITS.title.maxChars),
+  description: minMaxString("Description", RECIPE_LIMITS.description.minChars, RECIPE_LIMITS.description.maxChars),
+  references: v.pipe(
+    v.array(minMaxString("References", RECIPE_LIMITS.references.minChars, RECIPE_LIMITS.references.maxChars)),
+    v.maxLength(
+      RECIPE_LIMITS.references.maxCount,
+      `There cannot be more than ${RECIPE_LIMITS.references.maxCount} references`
+    )
+  ),
+  image: v.object({
+    isUrlTab: v.boolean(),
+    url: minMaxString("Image URL", RECIPE_LIMITS.imageUrl.minChars, RECIPE_LIMITS.imageUrl.maxChars)
+  }),
+  difficulty: v.picklist([
+    "very_easy",
+    "easy",
+    "moderate",
+    "hard",
+    "very_hard",
+    "nightmare"
+  ], "Select one of the difficulties"),
+  mealTypes: v.pipe(
+    v.array(v.picklist([
+      "breakfast",
+      "brunch",
+      "lunch",
+      "dinner",
+      "snack",
+      "dessert",
+      "drink",
+      "side",
+      "appetizer",
+      "condiment"
+    ])),
+    v.minLength(RECIPE_LIMITS.mealTypes.minCount),
+    v.maxLength(RECIPE_LIMITS.mealTypes.maxCount)
+  ),
+  servings: v.pipe(
+    v.number("Servings is required"),
+    v.integer("Servings must be an integer; decimal values are not allowed"),
+    v.minValue(
+      RECIPE_LIMITS.servings.minValue,
+      `Servings value be lower than ${RECIPE_LIMITS.servings.minValue}`
+    ),
+    v.maxValue(
+      RECIPE_LIMITS.servings.maxValue,
+      `Servings value cannot exceed ${RECIPE_LIMITS.servings.maxValue}`
+    )
+  ),
+  yield: v.optional(minMaxString("Yield", RECIPE_LIMITS.yield.minChars, RECIPE_LIMITS.yield.maxChars)),
+  activeTime: TimeSchema,
+  inactiveTime: TimeSchema,
+  cuisineSelectionPath: v.pipe(
+    v.array(v.pipe(v.number("Array must hold numbers"), v.integer("Array must hold integers"))),
+    v.transform((cuisineIds) => cuisineIds.at(-1))
+  ),
+  customCuisine: v.nullable(
+    minMaxString(
+      "Custom cuisine", 
+      RECIPE_LIMITS.customCuisine.minChars,
+      RECIPE_LIMITS.customCuisine.maxChars
+    )
+  ),
+  generalNotes: v.pipe(
+    v.array(v.object({
+      text: minMaxString("General note", RECIPE_LIMITS.generalNotes.minChars, RECIPE_LIMITS.generalNotes.maxChars),
+      isImportant: v.boolean()
+    })),
+    v.maxLength(RECIPE_LIMITS.generalNotes.maxCount)
+  ),
+  ingredients: v.pipe(
+    v.array(v.object({
+      text: minMaxString("Ingredient", RECIPE_LIMITS.ingredients.minChars, RECIPE_LIMITS.ingredients.maxChars),
+      notes: v.array(
+        minMaxString("Note", RECIPE_LIMITS.ingredients.notes.minChars, RECIPE_LIMITS.ingredients.notes.maxChars)
+      )
+    })),
+    v.minLength(
+      RECIPE_LIMITS.ingredients.minCount,
+      `There must be at least ${RECIPE_LIMITS.ingredients.minCount} ingredients`
+    ),
+    v.maxLength(
+      RECIPE_LIMITS.ingredients.maxCount,
+      `There cannot be more than ${RECIPE_LIMITS.ingredients.maxChars} ingredients`
+    )
+  ),
+  instructions: v.pipe(
+    v.array(v.object({
+      text: minMaxString("Instruction", RECIPE_LIMITS.instructions.minChars, RECIPE_LIMITS.instructions.maxChars),
+      notes: v.array(
+        minMaxString("Note", RECIPE_LIMITS.instructions.notes.minChars, RECIPE_LIMITS.instructions.notes.maxChars)
+      )
+    })),
+    v.minLength(
+      RECIPE_LIMITS.instructions.minCount,
+      `There must be at least ${RECIPE_LIMITS.instructions.minCount} instructions`
+    ),
+    v.maxLength(
+      RECIPE_LIMITS.instructions.maxCount,
+      `There cannot be more than ${RECIPE_LIMITS.instructions.maxChars} instructions`
+    )
+  ),
+}),
+v.check((recipe) => 
+  recipe.cuisineSelectionPath !== undefined ||
+  recipe.customCuisine !== null,
+  "You must either select a cuisine or enter a custom one"
+),
+v.transform(({ cuisineSelectionPath, customCuisine, ...rest }) => {
+  if (customCuisine !== null) {
+    return {
+      cuisine: {
+        type: "custom" as const,
+        text: customCuisine
+      },
+      ...rest
+    }
+  }
+  return {
+    cuisine: {
+      type: "existing" as const,
+      id: cuisineSelectionPath
+    },
+    ...rest
+  }
 })
+);
 
-export type Ingredient = z.input<typeof IngredientSchema>;
-export type Instruction = z.input<typeof InstructionSchema>;
-export type Recipe = z.input<typeof RecipeSchema>;
+export type RecipePrimitive = {
+  title: string
+  description: string
+  references: string[]
+  image: { isUrlTab: boolean, url: string }
+  difficulty: string
+  mealTypes: string[]
+  servings: number | null
+  yield: string
+  activeTime: { input: string, unit: string }
+  inactiveTime: { input: string, unit: string }
+  cuisineSelectionPath: number[]
+  customCuisine: string | null
+  generalNotes: { text: string, isImportant: boolean }[]
+  ingredients: { text: string, notes: string[] }[]
+  instructions: { text: string, notes: string[] }[]
+}
+
+export const sanitizeRecipe = (recipe: RecipePrimitive) => {
+  recipe.references = recipe.references.filter((ref) => ref.length > 0);
+  recipe.generalNotes = recipe.generalNotes.filter(
+    (note) => note.text.length > 0,
+  );
+  recipe.ingredients = recipe.ingredients.filter(
+    (ingredient) => ingredient.text.length > 0,
+  );
+  recipe.ingredients = recipe.ingredients.map(({ text, notes }) => {
+    return {
+      text,
+      notes: notes.filter((note) => note.length > 0),
+    };
+  });
+  recipe.instructions = recipe.instructions.filter(
+    (instruction) => instruction.text.length > 0,
+  );
+  recipe.instructions = recipe.instructions.map(({ text, notes }) => {
+    return {
+      text,
+      notes: notes.filter((note) => note.length > 0),
+    };
+  });
+}
+
+export type Errors = Record<string, string[]>;
+
+export const getErrors = (path: string, errors: Errors) => {
+  return errors[path] ?? [];
+}
+
+export const getAllErrors = (pattern: string, errors: Errors) => {
+  const escaped = pattern.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+  const regexPattern = escaped.replace(/%/g, "\\d+");
+  const regex = new RegExp(`^${regexPattern}$`);
+  return Object.entries(errors)
+    .filter(([key]) => regex.test(key))
+    .flatMap(([, messages]) => messages);
+}
