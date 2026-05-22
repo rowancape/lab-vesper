@@ -1,6 +1,6 @@
 # lab-vesper
 
-The name means absolutely nothing. I just figured that if I'm going to start uploading all my half-baked stuff into GitHub I should come up with some common naming scheme for them all, so I'm going to start prefixing them all with lab.
+The name means absolutely nothing. I just figured that if I'm going to start uploading all my half-baked stuff into GitHub I should come up with some common naming scheme for them all, so I'm going to start prefixing them all with lab and giving them a random fancy word.
 
 This is a SvelteKit recipe site project where I am currently experimenting with complex form handling, server validation, and UI patterns.
 
@@ -10,6 +10,7 @@ Currently using:
 - shadcn-svelte (completely new to me)
 - Valibot (completely new to me)
 - SQLite (completely new to me)
+- Drizzle ORM (completely new to me)
 
 Previously used Zod instead of Valibot, which you may be able to find from the commit history, but I am unsure. Switched to Valibot mainly to experiment and because Zod became annoying to use with really large forms (so far Valibot has been pretty annoying too)
 
