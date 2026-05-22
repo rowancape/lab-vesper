@@ -11,6 +11,9 @@ Currently using:
 - Valibot (completely new to me)
 - SQLite (completely new to me)
 - Drizzle ORM (completely new to me)
+- Bun (completely new to me — but it's basically a drop in replacement for node and npm so this is kind of meaningless)
+
+If nothing else, I hope this just shows that I am interested in learning new tools and technologies.
 
 Previously used Zod instead of Valibot, which you may be able to find from the commit history, but I am unsure. Switched to Valibot mainly to experiment and because Zod became annoying to use with really large forms (so far Valibot has been pretty annoying too)
 
