@@ -89,7 +89,7 @@
     <FieldSeparator />
     <DetailsFieldSet allCuisines={data.allCuisines} {errors} bind:recipe />
     <FieldSeparator />
-    <DirectionsFieldSet bind:recipe />
+    <DirectionsFieldSet {errors} bind:recipe />
     <Button type="submit" size="lg" class="font-bold">
       <UploadIcon strokeWidth={3} />
       Submit

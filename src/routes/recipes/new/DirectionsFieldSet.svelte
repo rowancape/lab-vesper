@@ -6,6 +6,7 @@
     FieldLegend,
     FieldDescription,
     FieldLabel,
+    FieldError
   } from "$lib/components/ui/field";
   import {
     InputGroup,
@@ -19,7 +20,7 @@
   import Toggle from "$lib/components/ui/toggle/toggle.svelte";
   import Separator from "$lib/components/ui/separator/separator.svelte";
 
-  import type { RecipePrimitive } from "$lib/domain/recipe";
+  import { type RecipePrimitive, type Errors, getErrors, getAllErrors } from "$lib/domain/recipe";
   import { RECIPE_LIMITS } from "$lib/domain/recipe";
 
   import {
@@ -30,8 +31,9 @@
 
   type Props = {
     recipe: RecipePrimitive;
+    errors: Errors;
   };
-  let { recipe = $bindable() }: Props = $props();
+  let { recipe = $bindable(), errors }: Props = $props();
 </script>
 
 <FieldSet>
@@ -120,8 +122,12 @@
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
+          {#if getErrors(`generalNotes.${i}.text`, errors).length}
+            <FieldError>{getErrors(`generalNotes.${i}.text`, errors)[0]}</FieldError>
+          {/if}
         {/each}
       </div>
+      <FieldError>{getErrors("generalNotes", errors)[0]}</FieldError>
     </Field>
 
     <!----------------->
@@ -197,6 +203,9 @@
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
+          {#if getErrors(`ingredients.${i}.text`, errors).length}
+            <FieldError>{getErrors(`ingredients.${i}.text`, errors)[0]}</FieldError>
+          {/if}
           {#if ingredient.notes.length}
             <div
               class="space-y-2 ml-4 mb-4"
@@ -236,6 +245,9 @@
                     </InputGroupButton>
                   </InputGroupAddon>
                 </InputGroup>
+                {#if getErrors(`ingredients.${i}.notes.${j}`, errors).length}
+                  <FieldError>{getErrors(`ingredients.${i}.notes.${j}`, errors)[0]}</FieldError>
+                {/if}
               {/each}
             </div>
           {/if}
@@ -251,6 +263,7 @@
           <PlusIcon />
         </Button>
       </div>
+      <FieldError>{getErrors("ingredients", errors)[0]}</FieldError>
     </Field>
 
     <!----------------->
@@ -331,6 +344,9 @@
               </InputGroupText>
             </InputGroupAddon>
           </InputGroup>
+          {#if getErrors(`instructions.${i}.text`, errors).length}
+            <FieldError>{getErrors(`instructions.${i}.text`, errors)[0]}</FieldError>
+          {/if}
           <div class="ml-4 mb-4" role="group">
             {#each instruction.notes as instructionNote, j}
               <InputGroup>
@@ -365,6 +381,9 @@
                   </InputGroupButton>
                 </InputGroupAddon>
               </InputGroup>
+              {#if getErrors(`instructions.${i}.notes.${j}`, errors).length}
+                <FieldError>{getErrors(`instructions.${i}.notes.${j}`, errors)[0]}</FieldError>
+              {/if}
             {/each}
           </div>
         {/each}
@@ -379,6 +398,7 @@
           <PlusIcon />
         </Button>
       </div>
+      <FieldError>{getErrors("instructions", errors)[0]}</FieldError>
     </Field>
   </FieldGroup>
 </FieldSet>
